@@ -1,0 +1,59 @@
+{
+  "servers" : [ {
+    "host" : "127.0.0.1",
+    "port" : "9999",
+    "alias" : "<%=node.name%>",
+    "queries" : [
+    {
+        "obj" : "\"kafka.server\":type=\"BrokerTopicMetrics\",name=\"AllTopicsMessagesInPerSec\"",
+        "resultAlias" : "kafka.server.BrokerTopicMetrics.AllTopicsMessagesInPerSec",
+        "attr" : [ "OneMinuteRate", "MeanRate", "Count" ],
+         "outputWriters" : [ {
+          "@class" : "com.googlecode.jmxtrans.model.output.GraphiteWriter", 
+          "settings" : {
+            "host" : "<%=@monitor_host%>",
+            "port" : "2003"
+          }
+        } ]
+     },
+     {
+     	"obj" : "\"kafka.server\":type=\"BrokerTopicMetrics\",name=\"AllTopicsBytesOutPerSec\"",
+        "resultAlias" : "kafka.server.BrokerTopicMetrics.AllTopicsBytesOutPerSec",
+        "attr" : [ "OneMinuteRate", "MeanRate", "Count" ],
+         "outputWriters" : [ {
+          "@class" : "com.googlecode.jmxtrans.model.output.GraphiteWriter", 
+          "settings" : {
+            "host" : "<%=@monitor_host%>",
+            "port" : "2003"
+          }
+        } ]
+     },
+     {
+     	"obj" : "\"kafka.server\":type=\"BrokerTopicMetrics\",name=\"AllTopicsFailedFetchRequestsPerSec\"",
+        "resultAlias" : "kafka.server.BrokerTopicMetrics.AllTopicsFailedFetchRequestsPerSec",
+        "attr" : [ "OneMinuteRate", "MeanRate", "Count" ],
+         "outputWriters" : [ {
+          "@class" : "com.googlecode.jmxtrans.model.output.GraphiteWriter", 
+          "settings" : {
+            "host" : "<%=@monitor_host%>",
+            "port" : "2003"
+          }
+        } ]
+     },
+     {
+     	"obj" : "\"kafka.server\":type=\"BrokerTopicMetrics\",name=\"AllTopicsFailedProduceRequestsPerSec\"",
+        "resultAlias" : "kafka.server.BrokerTopicMetrics.AllTopicsFailedProduceRequestsPerSec",
+        "attr" : [ "OneMinuteRate", "MeanRate", "Count" ],
+         "outputWriters" : [ {
+          "@class" : "com.googlecode.jmxtrans.model.output.GraphiteWriter", 
+          "settings" : {
+            "host" : "<%=@monitor_host%>",
+            "port" : "2003"
+          }
+        } ]
+     	
+     }
+    ],
+    "numQueryThreads": "2"
+  } ]
+}

@@ -1,0 +1,20 @@
+[program:kafka]
+command = /var/kafka/bin/kafka-server-start.sh /var/kafka/config/server.properties
+process_name=%(program_name)s
+autostart=true
+autorestart=true
+
+stopsignal=KILL
+stopasgroup = true
+killasgroup = true
+
+stdout_logfile=/tmp/kafka.log
+stdout_logfile_maxbytes=100MB
+stdout_logfile_backups=10
+
+stderr_logfile = /tmp/kafka.err
+stderr_logfile_maxbytes=10MB
+stderr_logfile_backups=10
+
+[group:kafka_server]
+programs=kafka

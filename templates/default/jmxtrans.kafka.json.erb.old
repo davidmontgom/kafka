@@ -1,0 +1,22 @@
+{
+  "servers" : [ {
+    "host" : "127.0.0.1",
+    "port" : "9999",
+    "alias" : "<%=node.name%>",
+    "queries" : [
+ {
+         "obj" : "kafka:type=kafka.SocketServerStats",
+          "resultAlias": "kafka.socketServerStats",
+          "attr" : [ "AvgFetchRequestMs", "AvgProduceRequestMs", "BytesReadPerSecond", "BytesWrittenPerSecond", "FetchRequestsPerSecond", "MaxFetchRequestMs", "MaxProduceRequestMs" , "NumFetchRequests" , "NumProduceRequests" , "ProduceRequestsPerSecond", "TotalBytesRead", "TotalBytesWritten", "TotalFetchRequestMs", "TotalProduceRequestMs" ],
+     "outputWriters" : [ {
+          "@class" : "com.googlecode.jmxtrans.model.output.GraphiteWriter", 
+          "settings" : {
+            "host" : "<%=@monitor_host%>",
+            "port" : "2003"
+          }
+        } ]
+      }
+    ],
+    "numQueryThreads": "2"
+  } ]
+}

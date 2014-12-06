@@ -1,0 +1,5 @@
+check process kafka
+	with matching "kafka.Kafka /var/kafka/config/server.properties"
+	start program = "/usr/local/bin/supervisorctl start kafka_server:"
+	stop program = "/usr/local/bin/supervisorctl stop kafka_server:"
+

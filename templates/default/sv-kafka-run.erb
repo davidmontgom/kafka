@@ -1,0 +1,3 @@
+#!/bin/sh
+exec 2>&1
+exec /var/lib/kafka-0.7.2-incubating-src/bin/kafka-server-start.sh /var/lib/kafka-0.7.2-incubating-src/config/server.properties >> /tmp/kafka.log 2>&1

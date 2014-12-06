@@ -1,0 +1,1 @@
+default[:monit][:server_type]='kafka'
