@@ -133,6 +133,8 @@ end
     broker_id = File.read("#{Chef::Config[:file_cache_path]}/broker_id")
   end
   
+  replicas = 1
+  paritions = 2
   ipaddress = node[:ipaddress]
   template "/var/kafka/config/server.properties" do
     path "/var/kafka/config/server.properties"
@@ -140,7 +142,8 @@ end
     owner "root"
     group "root"
     mode "0644"
-    variables :broker_id => broker_id, :zookeeper => zookeeper_hosts, :ipaddress => ipaddress
+    variables :broker_id => broker_id, :zookeeper => zookeeper_hosts, :ipaddress => ipaddress,
+    :replicas => replicas, :paritions => paritions
     notifies :run, "execute[restart_supervisorctl_kafka_server]"
   end
 
