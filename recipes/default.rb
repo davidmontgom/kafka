@@ -142,8 +142,11 @@ end
     owner "root"
     group "root"
     mode "0644"
-    variables :broker_id => broker_id, :zookeeper => zookeeper_hosts, :ipaddress => ipaddress,
-    :replicas => replicas, :paritions => paritions
+    variables lazy {{:broker_id => File.read("#{Chef::Config[:file_cache_path]}/broker_id"), 
+    :zookeeper => File.read("#{Chef::Config[:file_cache_path]}/zookeeper_hosts"), 
+    :ipaddress => ipaddress,
+    :replicas => replicas, 
+    :paritions => paritions}}
     notifies :run, "execute[restart_supervisorctl_kafka_server]"
   end
 
