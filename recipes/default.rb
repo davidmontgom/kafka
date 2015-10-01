@@ -22,14 +22,11 @@ bash "install_kafka" do
   user "root"
   cwd "/var/"
   code <<-EOH
-    git clone https://git-wip-us.apache.org/repos/asf/kafka.git
-    cd kafka
-    git checkout -b 0.8 remotes/origin/0.8
-    ./sbt "++2.9.2 update"
-    ./sbt "++2.9.2 package"
-    ./sbt "++2.9.2 assembly-package-dependency"
+    wget http://mirror.rise.ph/apache/kafka/0.8.2.1/kafka_2.11-0.8.2.1.tgz
+    tar -xvf kafka_2.11-0.8.2.1.tgz
+    mv kafka_2.11-0.8.2.1 kafka
     #http://stackoverflow.com/questions/14735363/trying-to-build-and-run-apache-kafka-0-8-against-scala-2-9-2-without-success
-    sed -i "s/2.8.0/2.9.2/g" bin/kafka-run-class.sh
+    #sed -i "s/2.8.0/2.9.2/g" bin/kafka-run-class.sh
     #Below is wrong - need to be at the top of file for KAFKA_JMX_OPTS
     #echo 'KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"' | tee -a /var/kafka/bin/kafka-run-class.sh 
     #echo 'export JMX_PORT=${JMX_PORT:-9999}' | tee -a /var/kafka/bin/kafka-server-start.sh
@@ -38,6 +35,7 @@ bash "install_kafka" do
   action :run
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/kafka_lock")}
 end
+
 
 
 if datacenter !="local"
