@@ -1,3 +1,4 @@
+#monit procmatch ".*/var/kafka/bin/"
 check process kafka
 	with matching "kafka.Kafka /var/kafka/config/server.properties"
 	start program = "/usr/local/bin/supervisorctl start kafka_server:"
