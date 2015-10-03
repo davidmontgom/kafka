@@ -1,6 +1,6 @@
 #monit procmatch ".*/var/kafka/bin/"
 check process kafka
-	with matching "kafka.Kafka /var/kafka/config/server.properties"
+	with matching ".*/var/kafka/bin/"
 	start program = "/usr/local/bin/supervisorctl start kafka_server:"
 	stop program = "/usr/local/bin/supervisorctl stop kafka_server:"
 
