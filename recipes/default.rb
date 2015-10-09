@@ -147,6 +147,16 @@ end
     :paritions => paritions}}
     notifies :run, "execute[restart_supervisorctl_kafka_server]"
   end
+  
+  template "/var/kafka/config/producer.properties" do
+    path "/var/kafka/config/producer.properties"
+    source "producer.properties.erb"
+    owner "root"
+    group "root"
+    mode "0644"
+    variables {{:ipaddress => ipaddress}}
+    notifies :run, "execute[restart_supervisorctl_kafka_server]"
+  end
 
 end
 
