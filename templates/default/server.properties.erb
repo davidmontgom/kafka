@@ -6,6 +6,7 @@
 # The id of the broker. This must be set to a unique integer for each broker.
 broker.id=<%=@broker_id%>
 advertised.host.name=<%=@ipaddress%>
+advertised.port=9092
 ############################# Socket Server Settings #############################
 
 # The port the socket server listens on
@@ -96,6 +97,7 @@ zookeeper.connect=<%=@zookeeper%>
 # Timeout in ms for connecting to zookeeper
 zookeeper.connection.timeout.ms=1000000
 
+num.replica.fetchers=4
 default.replication.factor=2
 delete.topic.enable=true
 unclean.leader.election.enable=true
