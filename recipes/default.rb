@@ -148,6 +148,7 @@ end
     notifies :run, "execute[restart_supervisorctl_kafka_server]"
   end
   
+=begin
   template "/var/kafka/config/producer.properties" do
     path "/var/kafka/config/producer.properties"
     source "producer.properties.erb"
@@ -157,6 +158,7 @@ end
     variables {{:ipaddress => ipaddress}}
     notifies :run, "execute[restart_supervisorctl_kafka_server]"
   end
+=end
 
 end
 
