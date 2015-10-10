@@ -30,8 +30,7 @@ for i in xrange(len(zk_host_list)):
 zk_host_str = ','.join(zk_host_list)
 zk = zc.zk.ZooKeeper(zk_host_str) 
 ip_address_list = zookeeper_hosts.split(',')
-shard = open('/var/shard.txt').readlines()[0].strip()
-node = '#{datacenter}-kafka-#{location}-#{node.chef_environment}-%s' % (shard)
+node = '#{datacenter}-kafka-#{location}-#{node.chef_environment}'
 path = '/%s/' % (node)
 #Each kafka server
 if zk.exists(path):
@@ -46,10 +45,10 @@ if zk.exists(path):
     broker_list = ','.join(t_list)
     metadata = "metadata.broker.list=%s" % broker_list
     conf = """
-    %s
-    producer.type=sync
-    compression.codec=none
-    serializer.class=kafka.serializer.DefaultEncoder
+%s
+producer.type=sync
+compression.codec=none
+serializer.class=kafka.serializer.DefaultEncoder
     """ % metadata
     for ip_address in kafka_servers:
         if ip_address != '#{node[:ipaddress]}':
@@ -60,7 +59,7 @@ if zk.exists(path):
           ssh.connect(ip_address, 22, username=username, pkey=key)
           cmd = "> /var/kafka/config/producer.properties"
           stdin, stdout, stderr = ssh.exec_command(cmd)
-          cmd = "echo '%s' | tee -a /var/kafka/config/producer.properties" % conf
+          cmd = "echo '%s' | tee -a /var/kafka/config/producer.properties" % conf.strip()
           stdin, stdout, stderr = ssh.exec_command(cmd)
           ssh.close()
           os.system("sudo ufw allow from %s" % ip_address)
