@@ -103,7 +103,7 @@ end
     variables({
       :heap => heap
     })
-    notifies :run, "execute[restart_supervisorctl_kafka_server]"
+    notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
   end
   
   template "/var/kafka/bin/kafka-run-class.sh" do
@@ -112,7 +112,7 @@ end
     owner "root"
     group "root"
     mode "0755"
-    notifies :run, "execute[restart_supervisorctl_kafka_server]"
+    notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
   end
   
 
@@ -145,7 +145,7 @@ end
     :ipaddress => ipaddress,
     :replicas => replicas, 
     :paritions => paritions}}
-    notifies :run, "execute[restart_supervisorctl_kafka_server]"
+    notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
   end
   
 =begin
@@ -171,7 +171,7 @@ template "/etc/supervisor/conf.d/kafka.conf" do
   group "root"
   mode "0755"
   #notifies :restart, resources(:service => "supervisord")
-  notifies :run, "execute[restart_supervisorctl_kafka_server]"
+  notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
 end
 
 
