@@ -10,9 +10,14 @@ db = data_bag_item("my_data_bag", "my")
 keypair=db[node.chef_environment][location]["ssh"]["keypair"]
 username=db[node.chef_environment][location]["ssh"]["username"]
 
+easy_install_package "zc.zk" do
+  action :install
+end
+easy_install_package "paramiko" do
+  action :install
+end
 
-
-script "zookeeper_add_redis" do
+script "zookeeper_kafka" do
     interpreter "python"
     user "root"
   code <<-PYCODE
