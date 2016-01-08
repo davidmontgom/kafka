@@ -86,6 +86,7 @@ f.write("%s" % (this_prefix))
 f.close()
 
 PYCODE
+not_if {File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")}
 end
 
 
@@ -165,7 +166,7 @@ end
     notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
   end
   
-
+=begin
   bash "broker_id" do
     user "root"
     cwd "/var/"
@@ -176,6 +177,7 @@ end
     action :run
     not_if {File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")}
   end
+=end
   
   if File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")
     broker_id = File.read("#{Chef::Config[:file_cache_path]}/broker_id")
