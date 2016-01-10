@@ -45,6 +45,57 @@ AWS_SECRET_ACCESS_KEY = db[node.chef_environment]['aws']['AWS_SECRET_ACCESS_KEY'
 zone_id = db[node.chef_environment]['aws']['route53']['zone_id']
 domain = db[node.chef_environment]['aws']['route53']['domain']
 
+
+script "kafka_myid" do
+  interpreter "python"
+  user "root"
+  cwd "/root"
+code <<-PYCODE
+import json
+import os
+from boto.route53.connection import Route53Connection
+from boto.route53.record import ResourceRecordSets
+from boto.route53.record import Record
+import hashlib
+conn = Route53Connection('#{AWS_ACCESS_KEY_ID}', '#{AWS_SECRET_ACCESS_KEY}')
+records = conn.get_all_rrsets('#{zone_id}')
+host_list = {}
+prefix={}
+root = None
+for record in records:
+  if record.name.find('kafka')>=0 and record.name.find('#{location}')>=0 and record.name.find('#{node.chef_environment}')>=0:
+    if record.resource_records[0]!='#{node[:ipaddress]}':
+      host_list[record.name[:-1]+":2181"]=record.resource_records[0]
+      p = record.name.split('.')[0]
+      prefix[p]=1
+      root = record.name[:-1]
+      
+this_ip = '#{node[:ipaddress]}'
+base_domain = 'kafka.#{datacenter}.#{node.chef_environment}.#{location}.#{domain}'
+if prefix.has_key('1')==False:
+  this_prefix = '1'
+elif prefix.has_key('2')==False:
+  this_prefix = '2'
+elif prefix.has_key('3')==False:
+  this_prefix = '3'
+else:
+  this_prefix = '4' 
+
+f = open("#{Chef::Config[:file_cache_path]}/broker_id_test",'w')  
+f.write("%s" % (this_prefix))
+f.close()
+
+PYCODE
+not_if {File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")}
+end
+
+
+
+
+
+
+
+
 script "zookeeper_myid" do
   interpreter "python"
   user "root"
@@ -115,7 +166,7 @@ end
     notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
   end
   
-
+=begin
   bash "broker_id" do
     user "root"
     cwd "/var/"
@@ -126,6 +177,7 @@ end
     action :run
     not_if {File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")}
   end
+=end
   
   if File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")
     broker_id = File.read("#{Chef::Config[:file_cache_path]}/broker_id")
