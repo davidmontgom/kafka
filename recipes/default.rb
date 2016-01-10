@@ -61,6 +61,8 @@ required_count = zookeeper_server[datacenter][environment][location][cluster_slu
 full_domain = "#{subdomain}.#{domain}"
 
 
+      host_list[record.name]=record.resource_records[0]
+
 script "zookeeper_myid" do
   interpreter "python"
   user "root"
@@ -78,12 +80,9 @@ host_list = {}
 prefix={}
 root = None
 for record in records:
-  if record.name.find("#{full_domain}")>=0:
+  if record.name.find("#{subdomain}")>=0:
     if record.resource_records[0]!='#{node[:ipaddress]}':
       host_list[record.name[:-1]+":2181"]=record.resource_records[0]
-      p = record.name.split('.')[0]
-      prefix[p]=1
-      root = record.name[:-1]
 with open('#{Chef::Config[:file_cache_path]}/zookeeper_hosts.json', 'w') as fp:
   json.dump(host_list, fp)
 fnl=["#{Chef::Config[:file_cache_path]}/zookeeper_hosts.json"]
