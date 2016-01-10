@@ -88,7 +88,9 @@ serializer.class=kafka.serializer.DefaultEncoder
           ssh.connect(ip_address, 22, username=username, pkey=key)
           cmd = "> /var/kafka/config/producer.properties"
           stdin, stdout, stderr = ssh.exec_command(cmd)
-          cmd = "echo '%s' | tee -a /var/kafka/config/producer.properties" % conf.strip()
+          cmd = "echo '%s' | tee -a /var/kafka/config/producer.properties" % conf
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          cmd = "sudo ufw allow from #{node[:ipaddress]}"
           stdin, stdout, stderr = ssh.exec_command(cmd)
           ssh.close()
           os.system("sudo ufw allow from %s" % ip_address)
