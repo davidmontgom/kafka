@@ -61,7 +61,7 @@ required_count = zookeeper_server[datacenter][environment][location][cluster_slu
 full_domain = "#{subdomain}.#{domain}"
 
 
-      host_list[record.name]=record.resource_records[0]
+      
 
 script "zookeeper_myid" do
   interpreter "python"
