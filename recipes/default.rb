@@ -6,7 +6,7 @@ slug = node.name.split('-')[4]
 cluster_slug = File.read("/var/cluster_slug.txt")
 cluster_slug = cluster_slug.gsub(/\n/, "") 
 cluster_index = File.read("/var/cluster_index.txt")
-cluster_index = cluster_slug.gsub(/\n/, "") 
+cluster_index = cluster_index.gsub(/\n/, "") 
 broker_id = cluster_index
 
 #http://blog.liveramp.com/2013/04/08/kafka-0-8-producer-performance-2/
