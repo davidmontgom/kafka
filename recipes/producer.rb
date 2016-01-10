@@ -1,14 +1,36 @@
 datacenter = node.name.split('-')[0]
-server_type = node.name.split('-')[1]
+environment = node.name.split('-')[1]
 location = node.name.split('-')[2]
-  
-data_bag("my_data_bag")
-zk = data_bag_item("my_data_bag", "zk")
-zk_hosts = zk[node.chef_environment][datacenter][location]["zookeeper_hosts"]
+server_type = node.name.split('-')[3]
+slug = node.name.split('-')[4] 
+cluster_slug = File.read("/var/cluster_slug.txt")
+cluster_slug = cluster_slug.gsub(/\n/, "") 
+cluster_index = File.read("/var/cluster_index.txt")
+cluster_index = cluster_slug.gsub(/\n/, "") 
 
-db = data_bag_item("my_data_bag", "my")
-keypair=db[node.chef_environment][location]["ssh"]["keypair"]
-username=db[node.chef_environment][location]["ssh"]["username"]
+data_bag("meta_data_bag")
+aws = data_bag_item("meta_data_bag", "aws")
+domain = aws[node.chef_environment]["route53"]["domain"]
+zone_id = aws[node.chef_environment]["route53"]["zone_id"]
+AWS_ACCESS_KEY_ID = aws[node.chef_environment]['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = aws[node.chef_environment]['AWS_SECRET_ACCESS_KEY']
+
+
+data_bag("server_data_bag")
+zookeeper_server = data_bag_item("server_data_bag", "zookeeper")
+required_count = zookeeper_server[datacenter][environment][location][cluster_slug]['required_count']
+if cluster_slug=="nocluster"
+  subdomain = "zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
+else
+  subdomain = "#{cluster_slug}-zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
+end
+full_domain = "#{subdomain}.#{domain}"
+
+if datacenter!='aws'
+  dc_cloud = data_bag_item("meta_data_bag", "#{datacenter}")
+  keypair = dc_cloud[node.chef_environment]["keypair"]
+  username = dc_cloud["username"]
+end
 
 easy_install_package "zc.zk" do
   action :install
@@ -28,14 +50,16 @@ logging.basicConfig()
 import paramiko
 import time
 username='#{username}'
-zookeeper_hosts = '#{zk_hosts}'
-zk_host_list = '#{zk_hosts}'.split(',')
-for i in xrange(len(zk_host_list)):
-    zk_host_list[i]=zk_host_list[i]+':2181' 
-zk_host_str = ','.join(zk_host_list)
+zookeeper_hosts = []
+for i in xrange(int(#{required_count})):
+    zookeeper_hosts.append("%s-#{full_domain}:2181" % (i+1))
+zk_host_str = ','.join(zookeeper_hosts)   
 zk = zc.zk.ZooKeeper(zk_host_str) 
-ip_address_list = zookeeper_hosts.split(',')
-node = '#{datacenter}-kafka-#{location}-#{node.chef_environment}'
+
+if "#{cluster_slug}"=="nocluster":
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}'
+else:
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}'
 path = '/%s/' % (node)
 #Each kafka server
 if zk.exists(path):

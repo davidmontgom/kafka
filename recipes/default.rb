@@ -1,10 +1,13 @@
-data_bag("my_data_bag")
-db = data_bag_item("my_data_bag", "my")
-
 datacenter = node.name.split('-')[0]
-server_type = node.name.split('-')[1]
+environment = node.name.split('-')[1]
 location = node.name.split('-')[2]
-
+server_type = node.name.split('-')[3]
+slug = node.name.split('-')[4] 
+cluster_slug = File.read("/var/cluster_slug.txt")
+cluster_slug = cluster_slug.gsub(/\n/, "") 
+cluster_index = File.read("/var/cluster_index.txt")
+cluster_index = cluster_slug.gsub(/\n/, "") 
+broker_id = cluster_index
 
 #http://blog.liveramp.com/2013/04/08/kafka-0-8-producer-performance-2/
 #/logs/kafka-request.log.2014-11-13-16
@@ -40,60 +43,22 @@ end
 
 if datacenter !="local"
   
-AWS_ACCESS_KEY_ID = db[node.chef_environment]['aws']['AWS_ACCESS_KEY_ID']
-AWS_SECRET_ACCESS_KEY = db[node.chef_environment]['aws']['AWS_SECRET_ACCESS_KEY']
-zone_id = db[node.chef_environment]['aws']['route53']['zone_id']
-domain = db[node.chef_environment]['aws']['route53']['domain']
+data_bag("meta_data_bag")
+aws = data_bag_item("meta_data_bag", "aws")
+domain = aws[node.chef_environment]["route53"]["domain"]
+zone_id = aws[node.chef_environment]["route53"]["zone_id"]
+AWS_ACCESS_KEY_ID = aws[node.chef_environment]['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = aws[node.chef_environment]['AWS_SECRET_ACCESS_KEY']
 
-
-script "kafka_myid" do
-  interpreter "python"
-  user "root"
-  cwd "/root"
-code <<-PYCODE
-import json
-import os
-from boto.route53.connection import Route53Connection
-from boto.route53.record import ResourceRecordSets
-from boto.route53.record import Record
-import hashlib
-conn = Route53Connection('#{AWS_ACCESS_KEY_ID}', '#{AWS_SECRET_ACCESS_KEY}')
-records = conn.get_all_rrsets('#{zone_id}')
-host_list = {}
-prefix={}
-root = None
-for record in records:
-  if record.name.find('kafka')>=0 and record.name.find('#{location}')>=0 and record.name.find('#{node.chef_environment}')>=0:
-    if record.resource_records[0]!='#{node[:ipaddress]}':
-      host_list[record.name[:-1]+":2181"]=record.resource_records[0]
-      p = record.name.split('.')[0]
-      prefix[p]=1
-      root = record.name[:-1]
-      
-this_ip = '#{node[:ipaddress]}'
-base_domain = 'kafka.#{datacenter}.#{node.chef_environment}.#{location}.#{domain}'
-if prefix.has_key('1')==False:
-  this_prefix = '1'
-elif prefix.has_key('2')==False:
-  this_prefix = '2'
-elif prefix.has_key('3')==False:
-  this_prefix = '3'
-else:
-  this_prefix = '4' 
-
-f = open("#{Chef::Config[:file_cache_path]}/broker_id_test",'w')  
-f.write("%s" % (this_prefix))
-f.close()
-
-PYCODE
-not_if {File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")}
+data_bag("server_data_bag")
+zookeeper_server = data_bag_item("server_data_bag", "zookeeper")
+if cluster_slug=="nocluster"
+  subdomain = "#{server_type}-#{datacenter}-#{environment}-#{location}-#{slug}"
+else
+  subdomain = "#{cluster_slug}-#{server_type}-#{datacenter}-#{environment}-#{location}-#{slug}"
 end
-
-
-
-
-
-
+required_count = zookeeper_server[datacenter][environment][location][cluster_slug]['required_count']
+full_domain = "#{subdomain}.#{domain}"
 
 
 script "zookeeper_myid" do
@@ -113,7 +78,7 @@ host_list = {}
 prefix={}
 root = None
 for record in records:
-  if record.name.find('zk')>=0 and record.name.find('#{location}')>=0 and record.name.find('#{node.chef_environment}')>=0:
+  if record.name.find("#{full_domain}")>=0:
     if record.resource_records[0]!='#{node[:ipaddress]}':
       host_list[record.name[:-1]+":2181"]=record.resource_records[0]
       p = record.name.split('.')[0]
@@ -165,24 +130,7 @@ end
     mode "0755"
     notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
   end
-  
-=begin
-  bash "broker_id" do
-    user "root"
-    cwd "/var/"
-    code <<-EOH
-      touch #{Chef::Config[:file_cache_path]}/broker_id
-      echo $RANDOM | tee -a #{Chef::Config[:file_cache_path]}/broker_id
-    EOH
-    action :run
-    not_if {File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")}
-  end
-=end
-  
-  if File.exists?("#{Chef::Config[:file_cache_path]}/broker_id")
-    broker_id = File.read("#{Chef::Config[:file_cache_path]}/broker_id")
-  end
-  
+ 
   replicas = 1
   paritions = 2
   ipaddress = node[:ipaddress]
@@ -192,7 +140,7 @@ end
     owner "root"
     group "root"
     mode "0644"
-    variables lazy {{:broker_id => File.read("#{Chef::Config[:file_cache_path]}/broker_id"), 
+    variables lazy {{:broker_id => broker_id, 
     :zookeeper => File.read("#{Chef::Config[:file_cache_path]}/zookeeper_hosts"), 
     :ipaddress => ipaddress,
     :replicas => replicas, 
