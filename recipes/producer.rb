@@ -18,12 +18,20 @@ AWS_SECRET_ACCESS_KEY = aws[node.chef_environment]['AWS_SECRET_ACCESS_KEY']
 
 data_bag("server_data_bag")
 zookeeper_server = data_bag_item("server_data_bag", "zookeeper")
-required_count = zookeeper_server[datacenter][environment][location][cluster_slug]['required_count']
-if cluster_slug=="nocluster"
+
+if zookeeper_server[datacenter][environment][location].has_key?(cluster_slug)
+  cluster_slug_zookeeper = cluster_slug
+else
+  cluster_slug_zookeeper = "nocluster"
+end
+
+if cluster_slug_zookeeper=="nocluster"
   subdomain = "zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
 else
-  subdomain = "#{cluster_slug}-zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
+  subdomain = "#{cluster_slug_zookeeper}-zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
 end
+
+required_count = zookeeper_server[datacenter][environment][location][cluster_slug_zookeeper]['required_count']
 full_domain = "#{subdomain}.#{domain}"
 
 if datacenter!='aws'
@@ -86,9 +94,7 @@ serializer.class=kafka.serializer.DefaultEncoder
           ssh = paramiko.SSHClient()
           ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
           ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = "> /var/kafka/config/producer.properties"
-          stdin, stdout, stderr = ssh.exec_command(cmd)
-          cmd = "echo '%s' | tee -a /var/kafka/config/producer.properties" % conf
+          cmd = """> /var/kafka/config/producer.properties | echo '%s' | tee -a /var/kafka/config/producer.properties""" % conf
           stdin, stdout, stderr = ssh.exec_command(cmd)
           cmd = "sudo ufw allow from #{node[:ipaddress]}"
           stdin, stdout, stderr = ssh.exec_command(cmd)
