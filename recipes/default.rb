@@ -1,8 +1,8 @@
-datacenter = node.name.split('-')[0]
-environment = node.name.split('-')[1]
-location = node.name.split('-')[2]
-server_type = node.name.split('-')[3]
-slug = node.name.split('-')[4] 
+server_type = node.name.split('-')[0]
+slug = node.name.split('-')[1] 
+datacenter = node.name.split('-')[2]
+environment = node.name.split('-')[3]
+location = node.name.split('-')[4]
 cluster_slug = File.read("/var/cluster_slug.txt")
 cluster_slug = cluster_slug.gsub(/\n/, "") 
 cluster_index = File.read("/var/cluster_index.txt")
@@ -60,9 +60,9 @@ else
 end
 
 if cluster_slug_zookeeper=="nocluster"
-  subdomain = "zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
+  subdomain = "zookeeper-#{slug}-#{datacenter}-#{environment}-#{location}"
 else
-  subdomain = "#{cluster_slug_zookeeper}-zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
+  subdomain = "zookeeper-#{slug}-#{datacenter}-#{environment}-#{location}-#{cluster_slug_zookeeper}"
 end
 
 required_count = zookeeper_server[datacenter][environment][location][cluster_slug_zookeeper]['required_count']
