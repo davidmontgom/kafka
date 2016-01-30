@@ -111,8 +111,8 @@ serializer.class=kafka.serializer.DefaultEncoder
           stdin, stdout, stderr = ssh.exec_command(cmd)
           ssh.close()
           os.system("sudo ufw allow from %s" % ip_address)
-os.system("> /var/kafka/config/producer.properties")
-os.system("echo '%s' | tee -a /var/kafka/config/producer.properties" % conf)
+    os.system("> /var/kafka/config/producer.properties")
+    os.system("echo '%s' | tee -a /var/kafka/config/producer.properties" % conf)
 
 PYCODE
   end
