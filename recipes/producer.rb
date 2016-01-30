@@ -47,6 +47,10 @@ easy_install_package "paramiko" do
   action :install
 end
 
+easy_install_package "dnspython" do
+  action :install
+end
+
 script "zookeeper_kafka" do
     interpreter "python"
     user "root"
@@ -60,8 +64,15 @@ import time
 username='#{username}'
 zookeeper_hosts = []
 for i in xrange(int(#{required_count})):
-    zookeeper_hosts.append("%s-#{full_domain}:2181" % (i+1))
-zk_host_str = ','.join(zookeeper_hosts)   
+    zookeeper_hosts.append("%s-#{full_domain}" % (i+1))
+zk_host_list = []
+for aname in zookeeper_hosts:
+  try:
+      data =  dns.resolver.query(aname, 'A')
+      zk_host_list.append(data[0].to_text()+':2181')
+  except:
+      print 'ERROR, dns.resolver.NXDOMAIN',aname
+zk_host_str = ','.join(zk_host_list)   
 zk = zc.zk.ZooKeeper(zk_host_str) 
 
 if "#{cluster_slug}"=="nocluster":
