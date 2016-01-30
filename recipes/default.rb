@@ -71,7 +71,7 @@ full_domain = "#{subdomain}.#{domain}"
 
       
 
-script "zookeeper_myid" do
+script "kafka_myid" do
   interpreter "python"
   user "root"
   cwd "/root"
