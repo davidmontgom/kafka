@@ -55,21 +55,22 @@ script "zookeeper_kafka" do
     interpreter "python"
     user "root"
   code <<-PYCODE
-import os
-import zc.zk
-import logging 
-logging.basicConfig()
 import paramiko
-import time
-username='#{username}'
+import subprocess
+import os
+import dns.resolver
+import zc.zk
+username='#{username}' 
 zookeeper_hosts = []
+zookeeper_ip_address_list = [] 
+zk_host_list = []  
 for i in xrange(int(#{required_count})):
     zookeeper_hosts.append("%s-#{full_domain}" % (i+1))
-zk_host_list = []
 for aname in zookeeper_hosts:
   try:
       data =  dns.resolver.query(aname, 'A')
       zk_host_list.append(data[0].to_text()+':2181')
+      zookeeper_ip_address_list.append(data[0].to_text())
   except:
       print 'ERROR, dns.resolver.NXDOMAIN',aname
 zk_host_str = ','.join(zk_host_list)   
@@ -80,12 +81,12 @@ if "#{cluster_slug}"=="nocluster":
 else:
     node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}'
 path = '/%s/' % (node)
-#Each kafka server
+kafka_servers = ['#{node[:ipaddress]}']
+metadata = None
 if zk.exists(path):
     addresses = zk.children(path)
+    kafka_servers = kafka_servers + list(set(addresses))
     kafka_servers = list(set(addresses))
-    kafka_servers.append('#{node[:ipaddress]}')
-    kafka_servers = list(set(kafka_servers))
     t_list = []
     for ip in kafka_servers:
         temp = '%s:9092' % ip
@@ -98,21 +99,76 @@ producer.type=sync
 compression.codec=none
 serializer.class=kafka.serializer.DefaultEncoder
     """ % metadata
-    for ip_address in kafka_servers:
-        if ip_address != '#{node[:ipaddress]}':
-          keypair_path = '/root/.ssh/#{keypair}'
-          key = paramiko.RSAKey.from_private_key_file(keypair_path)
-          ssh = paramiko.SSHClient()
-          ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-          ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = """> /var/kafka/config/producer.properties | echo '%s' | tee -a /var/kafka/config/producer.properties""" % conf
-          stdin, stdout, stderr = ssh.exec_command(cmd)
-          cmd = "sudo ufw allow from #{node[:ipaddress]}"
-          stdin, stdout, stderr = ssh.exec_command(cmd)
-          ssh.close()
-          os.system("sudo ufw allow from %s" % ip_address)
-    os.system("> /var/kafka/config/producer.properties")
-    os.system("echo '%s' | tee -a /var/kafka/config/producer.properties" % conf)
+    
+    
+for ip_address in kafka_servers:
+  if ip_address != '#{node[:ipaddress]}':
+    keypair_path = '/root/.ssh/#{keypair}'
+    key = paramiko.RSAKey.from_private_key_file(keypair_path)
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(ip_address, 22, username=username, pkey=key)
+    
+    cmd = """> /var/kafka/config/producer.properties | echo '%s' | tee -a /var/kafka/config/producer.properties""" % conf
+    stdin, stdout, stderr = ssh.exec_command(cmd)
+    
+    cmd = "iptables -C INPUT -s #{node[:ipaddress]} -j ACCEPT"
+    output_list, error_list = ssh.ssh_execute_command(cmd)
+    output = ' '.join(output_list) + ' '.join(error_list)
+    print 'output:',output
+    if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+        cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT" 
+        output_list, error_list = ssh.ssh_execute_command(cmd)
+    
+    cmd = "iptables -C OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
+    output_list, error_list = ssh.ssh_execute_command(cmd)
+    output = ' '.join(output_list) + ' '.join(error_list)
+    print 'output:',output
+    if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+        print 'OUTPUT',server_type, ip_address, output
+        cmd = "/sbin/iptables -A OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
+        output_list, error_list = ssh.ssh_execute_command(cmd)
+    ssh.close()
+    
+    
+
+for ip_address in kafka_servers:     
+  if ip_address != '#{node[:ipaddress]}':
+    cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
+    p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+    out = p.stdout.readline().strip()
+    if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+        cmd = "/sbin/iptables -A INPUT -s %s -j ACCEPT" % (ip_address)
+        os.system(cmd)
+        
+    cmd = "iptables -C OUTPUT -d %s -j ACCEPT" % (ip_address)
+    p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+    out = p.stdout.readline().strip()
+    if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+        cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
+        os.system(cmd)
+       
+if metadata: 
+  os.system("> /var/kafka/config/producer.properties")
+  os.system("echo '%s' | tee -a /var/kafka/config/producer.properties" % conf)
+else:
+  os.system("> /var/kafka/config/producer.properties")
+  metadata = "metadata.broker.list=#{node[:ipaddress]}:9092" 
+  conf = """
+%s
+producer.type=sync
+compression.codec=none
+serializer.class=kafka.serializer.DefaultEncoder
+    """ % metadata
+  os.system("echo '%s' | tee -a /var/kafka/config/producer.properties" % conf)
 
 PYCODE
   end
+  
+  
+  
+  
+  
+  
+  
+  
