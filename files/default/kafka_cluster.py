@@ -123,7 +123,7 @@ serializer.class=kafka.serializer.DefaultEncoder
         os.system("> /var/kafka/config/producer.properties")
         os.system("echo '%s' | tee -a /var/kafka/config/producer.properties" % conf)
     
-    f.close()
+
     if zk:
         zoo.close()
 
