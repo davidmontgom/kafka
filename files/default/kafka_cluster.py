@@ -90,12 +90,6 @@ def kafka(args):
     kafka_hosts = [ip_address]
     
     t_list = [ip_address+":9092"]
-    for ip in kafka_servers:
-        temp = '%s:9092' % ip
-        t_list.append(temp)
-    
-    
-    
     
     if zk.exists(path):
         addresses = zk.children(path)
