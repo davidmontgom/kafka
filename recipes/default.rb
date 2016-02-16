@@ -155,6 +155,16 @@ end
     notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
   end
   
+    template "/var/kafka/config/consumer.properties" do
+    path "/var/kafka/config/consumer.properties"
+    source "consumer.properties.erb"
+    owner "root"
+    group "root"
+    mode "0644"
+    variables lazy {{:zookeeper => File.read("#{Chef::Config[:file_cache_path]}/zookeeper_hosts")}}
+    notifies :run, "execute[restart_supervisorctl_kafka_server]", :delayed
+  end
+  
 =begin
   template "/var/kafka/config/producer.properties" do
     path "/var/kafka/config/producer.properties"
